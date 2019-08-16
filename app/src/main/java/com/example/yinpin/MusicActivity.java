@@ -13,6 +13,7 @@ import android.media.MediaFormat;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.os.Environment;
+import android.telecom.Call;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -24,6 +25,8 @@ import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+
+import static android.media.MediaExtractor.SEEK_TO_PREVIOUS_SYNC;
 
 public class MusicActivity<path> extends AppCompatActivity implements View.OnClickListener  {
     private static Songs songSelected;
@@ -38,6 +41,7 @@ public class MusicActivity<path> extends AppCompatActivity implements View.OnCli
     public static boolean pause = true;
     public static int i=1;
     public static int j=1;
+    public static int m=1;
     int mSampleRate;
     int channel;
     int samplerate=44100;//采样率44100
@@ -73,8 +77,7 @@ public class MusicActivity<path> extends AppCompatActivity implements View.OnCli
         songList = new Gson().fromJson(JsonData3, new TypeToken<List<Songs>>(){}.getType()); //接收整个歌曲列表
 
 
-         play = (Button) findViewById(R.id.play);//此处未完善
-         stop = (Button) findViewById(R.id.stop);
+
          pause1 = (Button) findViewById(R.id.pause1);
          //continuer = (Button) findViewById(R.id.continuer);
          back = (Button) findViewById(R.id.button_back);
@@ -84,8 +87,6 @@ public class MusicActivity<path> extends AppCompatActivity implements View.OnCli
           author = (TextView) findViewById(R.id.textAuthor);
         //title.setText(songSelected.getTitle());
         //author.setText(songSelected.getSinger());
-        play.setOnClickListener(this);
-        stop.setOnClickListener(this);
         pause1.setOnClickListener(this);
        // continuer.setOnClickListener(this);
         back.setOnClickListener(this);
@@ -136,28 +137,12 @@ public class MusicActivity<path> extends AppCompatActivity implements View.OnCli
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.play:
-                   if (ispause) {
-                       excute( songSelected.getFileUrl());
-                       Log.d("xnxn无", String.valueOf(ispause)+"abc");
-                       ispause = false;
-                   }
-                break;
-            case R.id.stop:
-                if (!ispause) {
-                    Log.d("xn08061", "123A");
-                    Log.d("xn08061", "123B");
-                    ispause = true;
-                    pause=true;
-                }
-                pause=true;
-                break;
             case R.id.pause1:
                if(i%2==1){
                 if(pause) {
                     pause = false;
                     i++;
-                   pause1.setBackground(getDrawable(R.drawable.continuer));
+                   pause1.setBackground(getDrawable(R.drawable.play));
                 }
                }
               else if(i%2==0){
@@ -183,33 +168,66 @@ public class MusicActivity<path> extends AppCompatActivity implements View.OnCli
                 break;
             case R.id.button_left:
                 pause=true;
-                if (!ispause) {
-                    ispause = true;
+                if(j%2==1){
+                    if (!ispause) {
+                        ispause = true;
+                    }
+                   if(songPosition > 0) {
+                        songPosition = songPosition - 1;
+                    }
+                    songSelected = songList.get(songPosition);
+
+
+                    j++;
                 }
-                if(songPosition > 0) {
-                    songPosition = songPosition - 1;
+               else if(j%2==0){
+                    if (ispause) {
+                        ispause = false;
+                        title.setText(songSelected.getTitle());
+                        author.setText(songSelected.getSinger());
+                         excute( songSelected.getFileUrl());
+                        //Log.d("xnxn无", String.valueOf(ispause)+"abc");
+                        if(pause){
+                            pause1.setBackground(getDrawable(R.drawable.pause));
+                            j++;
+                            i++;
+                        }
+                    }
                 }
-                songSelected = songList.get(songPosition);
-                Log.e("R.id.button_left:",songSelected.getTitle());
-                Log.e("R.id.button_left:",songSelected.getFileUrl());
-                title.setText(songSelected.getTitle());
-                author.setText(songSelected.getSinger());
+
+
                 /*ispause=false;
                 excute(songSelected.getFileUrl());*/
                 break;
             case R.id.button_right:
-                pause=true;
-                if (!ispause) {
-                    ispause = true;
-                }
-                Log.e("R.id.button_rights:",String.valueOf(songPosition));
-                    if (songPosition < songList.size() - 1) {
-                        songPosition = songPosition + 1;
-                    }
-                    songSelected = songList.get(songPosition);
-                   title.setText(songSelected.getTitle());
-                   author.setText(songSelected.getSinger());
-                Log.e("R.id.button_right:",songSelected.getTitle());
+               if(m%2==1) {
+                   pause = true;
+                   if (!ispause) {
+                       ispause = true;
+                   }
+                   Log.e("R.id.button_rights:", String.valueOf(songPosition));
+                   if (songPosition < songList.size() - 1) {
+                       songPosition = songPosition + 1;
+                   }
+                   songSelected = songList.get(songPosition);
+
+                   Log.e("R.id.button_right:", songSelected.getTitle());
+                   m++;
+               }else if(m%2==0){
+                   if (ispause) {
+                       ispause = false;
+                       title.setText(songSelected.getTitle());
+                       author.setText(songSelected.getSinger());
+                       excute( songSelected.getFileUrl());
+                       //Log.d("xnxn无", String.valueOf(ispause)+"abc");
+                       if(pause){
+                           pause1.setBackground(getDrawable(R.drawable.pause));
+                           m++;
+                           i++;
+                       }
+                   }
+
+               }
                 break;
             default:
                 break;
@@ -218,13 +236,16 @@ public class MusicActivity<path> extends AppCompatActivity implements View.OnCli
     public  void excute(String path){
         {
             try {
-                title.setText(songSelected.getTitle());
+               title.setText(songSelected.getTitle());
                 author.setText(songSelected.getSinger());
                Extractor = new MediaExtractor();
                 Log.e("xnxn无",songSelected.getFileUrl()+"a");
                    Extractor.setDataSource(path);
+                Log.e("xnxn无123",path);
                 for (int i = 0; i < Extractor.getTrackCount(); i++) {
                     format = Extractor.getTrackFormat(i);//获取指定（index）的通道格式
+                    float time = format.getLong(MediaFormat.KEY_DURATION) / 1000000;
+                    Log.e("xnxn无123", String.valueOf(time));
                     String mime = format.getString(MediaFormat.KEY_MIME);//媒体数据格式
                     if (mime.startsWith("audio/")) {
 
@@ -247,12 +268,14 @@ public class MusicActivity<path> extends AppCompatActivity implements View.OnCli
                                 mediaDecode.setCallback(new MediaCodec.Callback() {
                                     @Override
                                     public void onInputBufferAvailable(MediaCodec mediaCodec, int id) {
-                                        Log.d("xn", "onInputBufferAvailable");
                                         if (!ispause) //8.7
                                         {
+                                            Log.e("xn1234", "onInputBufferAvailable");
+
                                             ByteBuffer inputBuffer = mediaDecode.getInputBuffer(id);
                                             {
                                                 {
+                                                    Extractor.seekTo(10, SEEK_TO_PREVIOUS_SYNC);
                                                     int readresult = Extractor.readSampleData(inputBuffer, 0);//从MediaExtractor中读取一帧待解的数据
 
                                                     //小于0 代表所有数据已读取完成
@@ -263,8 +286,9 @@ public class MusicActivity<path> extends AppCompatActivity implements View.OnCli
                                                         mediaDecode.queueInputBuffer(id, 0, readresult, Extractor.getSampleTime(), 0);//插入一帧待解码的数据
                                                         Log.d("xn-readresult", String.valueOf(readresult));
                                                         if(pause) {
-                                                            Extractor.advance();//MediaExtractor移动到下一取样处
 
+                                                            Extractor.advance();//MediaExtractor移动到下一取样处
+                                                            //Extractor.seekTo(0, SEEK_TO_PREVIOUS_SYNC);
                                                         }
                                                     }
                                                 }
@@ -287,11 +311,11 @@ public class MusicActivity<path> extends AppCompatActivity implements View.OnCli
                                                     Log.d("xn-mbuffer", String.valueOf(mbuffer));
                                                     outputBuffer.get(mbuffer);//将Buffer内的数据取出到字节数组中
                                                     mPlayer.play();
+
                                                     // mPlayer.pause();
-                                                    if(pause)
-                                                    {
-                                                        mPlayer.write(mbuffer, 0, bufferInfo.size);
-                                                    }
+                                                        if (pause) {
+                                                            mPlayer.write(mbuffer, 0, bufferInfo.size);
+                                                        }
 
                                                 }
                                                 mediaDecode.releaseOutputBuffer(id, false);
@@ -316,8 +340,6 @@ public class MusicActivity<path> extends AppCompatActivity implements View.OnCli
                 }
                 format =  mediaDecode.getOutputFormat();
                 mediaDecode.start();//8.7
-                Log.d("xn-诺"," mPlayer.pause()");
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
